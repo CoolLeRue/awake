@@ -37,7 +37,7 @@ local hs = include('lib/halfsecond')
 local MusicUtil = require "musicutil"
 
 local options = {}
-options.OUTPUT = {"audio", "midi", "audio + midi", "crow out 1+2", "crow ii JF"}
+options.OUTPUT = {"audio", "midi", "audio + midi", "crow out 1+2", "crow cv + ii JF"}
 options.STEP_LENGTH_NAMES = {"1 bar", "1/2", "1/3", "1/4", "1/6", "1/8", "1/12", "1/16", "1/24", "1/32", "1/48", "1/64"}
 options.STEP_LENGTH_DIVIDERS = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64}
 
@@ -178,10 +178,12 @@ local function step()
         crow.output[2].execute()
       elseif params:get("output") == 5 then
         crow.ii.jf.play_note((note_num-60)/12,5)
+        crow.output[1].volts = (note_num-60)/12
+        crow.output[2].execute()
       end
       
       -- MIDI out
-      if (params:get("output") == 2 or params:get("output") == 3) then
+      if (params:get("output") == 2 or params:get("output") == 3 or params:get("output") == 5) then
         midi_out_device:note_on(note_num, 96, midi_out_channel)
         table.insert(active_notes, note_num)
 
@@ -193,7 +195,7 @@ local function step()
     end
   end
 
-  if params:get("crow_clock") == 2 then crow.output[1]:execute() end
+  if params:get("crow_clock") == 2 then crow.output[3]:execute() end
 
 
   if g then
@@ -227,7 +229,7 @@ function init()
     options = {"off","on"},
     action = function(value)
       if value == 2 then
-        crow.output[1].action = "{to(5,0),to(5,0.05),to(0,0)}"
+        crow.output[3].action = "{to(5,0),to(5,0.05),to(0,0)}"
       end
     end}
   
@@ -239,6 +241,7 @@ function init()
       all_notes_off()
       if value == 4 then crow.output[2].action = "{to(5,0),to(0,0.25)}"
       elseif value == 5 then
+        crow.output[2].action = "{to(5,0),to(0,0.25)}"
         crow.ii.pullup(true)
         crow.ii.jf.mode(1)
       end
